@@ -1,7 +1,6 @@
 import confluent_kafka
-import datetime
-import random
-import json
+
+
 
 # This example uses Confluent's Python Client for Apache Kafka
 # https://github.com/confluentinc/confluent-kafka-python
@@ -26,21 +25,19 @@ conf = {
   'sasl.oauthbearer.client.secret': 'unused',
   'sasl.oauthbearer.method': 'oidc'
 }
-producer = confluent_kafka.Producer(conf)
 
-# Generate 10 random messages
-for i in range(10):
-  # Generate a random message
-  now = datetime.datetime.now()
-  datetime_string = now.strftime("%Y-%m-%d %H:%M:%S")
-  message_data = {
-    "random_id": random.randint(1, 10600),
-    "date_time": datetime_string
-  }
-  # Serialize data to bytes
-  serialized_data = json.dumps(message_data).encode('utf-8')
-  # Produce the message
-  producer.produce(kafka_topic_name, serialized_data)
-  print(f"Produced {i} messages")
-  producer.flush()
-producer.flush()
+consumer = confluent_kafka.Consumer(conf)
+consumer.subscribe([kafka_topic_name])
+
+try:
+    while (True):
+        msg = consumer.poll(timeout=1.0)
+        if msg is None: continue
+        if msg.error():
+            print("Something went wrong...")
+
+        print(msg.value())
+except KeyboardInterrupt:
+    print('Canceled by user.')
+finally:
+    consumer.close()
